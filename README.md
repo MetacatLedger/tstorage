@@ -27,6 +27,10 @@ TCOPY cAddr sAddr mAddr len
 
 Copies `len` bytes of data from the address `sAddr` in the transient storage of account `cAddr` to memory address `mAddr`.
 
+The idea is that the instructions are backed by a mapping, `Map<Address, Memory>`, where `Address` is a regular 20 byte Ethereum address, and `Memory` is some kind of byte array similar to the regular EVM memory (meaning it uses 32 byte words, can be expanded, etc.) 
+
+The map would be initialized when a transaction is run, and various things could be done to it, and then as the program runs, the memory could be accessed through the instructions, e.g. `(TLOAD accountAddress, storageAddress) := tStorage.get(accountAddress).load(storageAddress)`, where `load` is a function that returns the 32 bytes starting at `storageAddress`.
+
 ### docs
 
 `lll_mods.md` explains how to download and build a modified LLLC that accepts the new instructions.
