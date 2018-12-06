@@ -1,0 +1,32 @@
+{
+	(def "T_INIT_ADDR" 0x00)
+	(def "T_COUNTER_ADDR" 0x20)
+
+	(def "tInit" (TLOAD (ADDRESS) T_INIT_ADDR))
+	(def "tCounter" (TLOAD (ADDRESS) T_COUNTER_ADDR))
+
+	(def "tInitW" (val) (TSTORE T_INIT_ADDR val))
+	(def "tCounterW" (val) (TSTORE T_COUNTER_ADDR val))
+
+	(def "StaticInit"
+	    (unless tInit {
+		(tInitW 0x01)
+		(tCounterW 0x00)
+	    })
+	)
+
+	[0x20] (create {
+
+		StaticInit
+		(tCounterW (+ tCounter 1))
+
+		(returnlll {
+			StaticInit
+			(tCounterW (+ tCounter 1))
+			(return 0)
+		})
+	})
+
+	(msg @0x20 0)
+	[[0x00]] (TLOAD @0x20 T_COUNTER_ADDR)
+}

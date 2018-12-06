@@ -1,0 +1,57 @@
+{
+	(def "T_INIT_ADDR" 0x00)
+	(def "T_MSG_ADDR" 0x20)
+	(def "T_MONEY_ADDR" 0x40)
+
+	(def "tInit" (TLOAD (ADDRESS) T_INIT_ADDR))
+	(def "tMsg" (TLOAD (ADDRESS) T_MSG_ADDR))
+	(def "tMoney" (TLOAD (ADDRESS) T_MONEY_ADDR))
+
+	(def "tInitW" (val) (TSTORE T_INIT_ADDR val))
+	(def "tMsgW" (val) (TSTORE T_MSG_ADDR val))
+	(def "tMoneyW" (val) (TSTORE T_MONEY_ADDR val))
+
+	(def "StaticInit"
+	    (unless tInit {
+            (tInitW 0x01)
+            (tMsgW 0x00)
+            (tMoneyW 0x00)
+	    })
+	)
+
+	(def "tMsgEq" (val) (= (TLOAD (CALLER) T_MSG_ADDR) val))
+
+	StaticInit
+
+	(when (tMsgEq 0) {
+		(tMsgW "Here's ur message.")
+
+		[0x20] (create { ;; new contract init
+
+			StaticInit
+
+			(returnlll { ;; new contract body
+				StaticInit
+				(when (tMsgEq "Here's ur message.") {
+					;; write message and reply by sending a call.
+					(tMsgW "U want money?")
+					(msg (CALLER) 0)
+					;; if caller responds that they want money, pay, otherwise thank them.
+					(if (tMsgEq "Yes.") {
+						(send (CALLER) (TLOAD (CALLER) T_MONEY_ADDR))
+						(tMsgW "I sent money.")
+					} {
+						(tMsgW "Thx 4 free message.")
+					})
+				})
+				(STOP)
+			})
+		})
+
+		(msg @0x20 0)
+		[[0x00]] (TLOAD @0x20 T_MSG_ADDR)
+		(STOP)
+	})
+
+	(when (tMsgEq "U want money?") (tMsgW "No."))
+}
