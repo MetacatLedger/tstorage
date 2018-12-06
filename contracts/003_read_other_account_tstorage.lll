@@ -13,8 +13,8 @@
 
 	(def "StaticInit"
 	    (unless tInit {
-		(tInitW 0x01)
-		(tCounterW 0x00)
+		    (tInitW 0x01)
+		    (tCounterW 0x00)
 	    })
 	)
 

@@ -2,7 +2,6 @@
     ;; Writes an init flag to transient storage then reads from it and returns the value.
 
 	(def "T_INIT_ADDR" 0x00)
-	(def "T_COUNTER_ADDR" 0x20)
 
 	(def "tInit" (TLOAD (ADDRESS) T_INIT_ADDR))
 
@@ -10,7 +9,7 @@
 
 	(def "StaticInit"
 	    (unless tInit {
-		(tInitW 1)
+		    (tInitW 1)
 	    })
 	)
 

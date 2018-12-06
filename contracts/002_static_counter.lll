@@ -14,8 +14,8 @@
 
 	(def "StaticInit"
 	    (unless tInit {
-		(tInitW 0x01)
-		(tCounterW 0x00)
+		    (tInitW 0x01)
+		    (tCounterW 0x00)
 	    })
 	)
 
@@ -23,7 +23,7 @@
 
 	(unless (= tCounter 5) {
 		(tCounterW (+ tCounter 1))
-		(msg (ADDRESS) 0)
+		(msg (ADDRESS) 0) ;; Calls itself
 	})
 
 	(return tCounter)
