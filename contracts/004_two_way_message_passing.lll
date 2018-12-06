@@ -1,4 +1,7 @@
 {
+
+    ;; Contract uses transient storage to pass a message to another contract, then read a response.
+
 	(def "T_INIT_ADDR" 0x00)
 	(def "T_MSG_ADDR" 0x20)
 

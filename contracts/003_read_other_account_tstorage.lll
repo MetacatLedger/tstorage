@@ -1,4 +1,7 @@
 {
+    ;; Contract creates a new contract that writes to its transient storage, then
+    ;; it reads from the transient storage of that contract.
+
 	(def "T_INIT_ADDR" 0x00)
 	(def "T_COUNTER_ADDR" 0x20)
 

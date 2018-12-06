@@ -1,5 +1,8 @@
 {
 
+    ;; Initializes transient storage then writes to counter every time contract is called.
+    ;; Contract then calls itself a number of times, and finally returns the counter.
+
 	(def "T_INIT_ADDR" 0x00)
 	(def "T_COUNTER_ADDR" 0x20)
 
