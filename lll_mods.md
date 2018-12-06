@@ -1,28 +1,5 @@
 New instructions added to LLLC. Modified compiler can be found at https://github.com/androlo/solidity, on the 'tstore' branch. Include `-DLLL=ON` when running cmake. 
 
-Informally:
-
-```
-TLOAD cAddr sAddr
-```
-
-`TLOAD` reads the data stored at address `sAddr` in the transient storage of the account with address `cAddr`.
-
-Example: if the account with address `0x00...01` wants to read from its own transient storage at address `0x20`, in LLL that would be `(TSTORE 0x00...01 0x20)`
-
-```
-TSTORE sAddr val
-```
-
-Stores the 32 byte value `val` at address `sAddr` in the account's own transient storage.
-
-
-```
-TCOPY cAddr sAddr mAddr len
-```
-
-Copies `len` bytes of data from the address `sAddr` in the transient storage of account `cAddr` to memory address `mAddr`.
-
 
 #### Usage example
 
