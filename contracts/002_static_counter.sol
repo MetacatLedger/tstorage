@@ -8,6 +8,7 @@ contract Test {
         assembly {
             if iszero(tload(address, 0x0)) {
                 tstore(0x00, 1)
+                tstore(0x20, 0)
             }
         }
     }
