@@ -1,10 +1,6 @@
 # Overview
 
-`TSTORE sAddr val - store 'val' at tStore(_ADDRESS_)[sAddr]`
-
-`TLOAD accAddr sAddr - read the value at tStore(accAddr)[sAddr]`
-
-(maybe) `TCOPY accAddr sAddr len memAddr - copy 'len' bytes starting at tStore(accAddr)[sAddr] to memory position 'memAddr'`
+Some ideas about how generic transient storage could be used by other instructions.
 
 ### Calls using readonly call-, and return-data.
 
@@ -40,7 +36,7 @@ If the receiving contract returns data, `RETURN` will set `retPos` and `retLen` 
 
 This would mean changes to the `CALL` and `RETURN` instructions, implemented at the VM level.
 
-`CALLDATA` and `RETURNDATA` would become "volatile" in that the various positions and size values could potentially change during runtime (when calls are made), meaning these values should be copied as soon as possible. For that reason, those instructions would probably have to be deprecated in favor of `TLOAD`.
+`CALLDATA` and `RETURNDATA` would become "volatile" in that the various positions and size values could potentially change during runtime (when calls are made), meaning these values should be copied before any calls are made.
 
 Example of reading calldata:
 
@@ -79,7 +75,7 @@ Unlike the readonly version, this requires no params for position and size for e
 
 (Info on staticInit is found in the next section)
 
-To read calldata, each contract would use `tStore(CALLER)` instead of `tStore(0)`, but it would work the same as in the readonly version. To bootstrap an external transaction, the VM has to populate `tStore` for the calling address. When it does, it could skip the return + free mem data and only use [cdPos (0x40), cdLen, txdata ... ]. 
+To read calldata, each contract would use `tStore(CALLER)` instead of `tStore(0)`, but it would work the same as in the readonly version. To bootstrap an external transaction, the VM has to populate `tStore` for the calling address. When it does, it could skip the return + free mem data and only use [cdPos (0x40), cdLen, txdata ... ]. Additionally, `tStore(0)` could have the transaction input stored `[len, txinput ... ]` so that it can be accessed by all code during the entire transaction.
 
 To read returndata, contracts would just read retPos and retSize from the `tStore` of the address it sent the most recent call to.
 
@@ -104,7 +100,7 @@ Example of reading returndata:
 ```
 assembly {
 	let target := 0x...
-	// call( ... )
+	// call( target, ... )
 	let retPos := tLoad(target, 0x40)
 	let retLen := tLoad(target, 0x60)
 	// ...
@@ -122,7 +118,9 @@ A type of "static initialization" could be done using a reserved field.
 ```
 assembly {
     if(iszero(tload(0x80)) {
-    t
+        tstore(0x80, 1)
+        // other init logic
+        // ...
     }
 }
 ```
@@ -150,3 +148,12 @@ assembly {
     
 }
 ```
+
+There are multiple LLL examples of this in the contract directory.
+
+#### tStore(0)
+
+If contract-to-contract calls are done using the transient storage of the involved contracts instead of address 0, that address can store other information that should be available throughout the whole transaction. 
+
+An example already mentioned is tx input. it could be written in at the start of the transaction, `[txDataLen, txData ...]`. Other context could also be put there, such as the initial gas.
+
