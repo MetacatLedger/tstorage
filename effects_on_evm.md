@@ -151,4 +151,4 @@ LLL Example:
 }
 ```
 
-This works, but it seems rather bug prone since the storage is not routinely cleared. If it is cleared by the VM (for example with a CALL it would take memory address and length params, clear tstorage and then write the new data, and similar for return) then it is better suited for passing messages but makes it useless for manual storage.
+This works, but it seems rather bug prone since the storage is not routinely cleared. If it is cleared by the VM (for example with a CALL it would continue to take memory address and length params, clear tstorage and then write the new data, and similar for return) then it is better suited for passing messages but makes it useless for manual storage. It would essentially just merge calldata and returndata to one single memory.
