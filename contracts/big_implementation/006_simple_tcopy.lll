@@ -1,0 +1,29 @@
+{
+    ;; Writes an init flag to transient storage then reads from it and returns the value.
+
+	(def "T_INIT_ADDR" 0x00)
+	(def "T_DATA_LEN_ADDR" 0x20)
+	(def "T_DATA_ADDR" 0x40)
+
+	(def "tInit" (TLOAD (ADDRESS) T_INIT_ADDR))
+	(def "tDataLen" (TLOAD (ADDRESS) T_DATA_LEN_ADDR))
+
+	(def "tInitW" (val) (TSTORE T_INIT_ADDR val))
+	(def "tDataLenW" (val) (TSTORE T_DATA_LEN_ADDR val))
+
+	(def "StaticInit"
+	    (unless tInit {
+		    (tInitW 1)
+	    })
+	)
+
+	StaticInit
+
+	(tDataLenW 128)
+	(TSTORE T_DATA_ADDR 0x01)
+	(TSTORE (+ T_DATA_ADDR 32) 0x02)
+	(TSTORE (+ T_DATA_ADDR 64) 0x03)
+	(TSTORE (+ T_DATA_ADDR 96) 0x04)
+	(TCOPY (ADDRESS) T_DATA_ADDR 0x00 tDataLen)
+	(return 0x00 tDataLen)
+}
