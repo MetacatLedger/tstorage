@@ -16,6 +16,9 @@ contract Static {
 
 contract MsgReaderWriter is Static {
 
+    uint constant internal TO_MSG = "Here's ur message.";
+    uint constant internal RE_MSG = "Thanks, bro.";
+
 	function msgRead() internal view returns (bytes32){
 		bytes32 msg;
         assembly {
@@ -48,8 +51,8 @@ contract Deployed is MsgReaderWriter {
 
     function body() public view {
         bytes32 msg = msgRead(uint160(msg.sender));
-		if (msg == "Here's ur message.") {
-			msgWrite(bytes32("Thanks, bro."));
+		if (msg == TO_MSG) {
+			msgWrite(RE_MSG);
 		}
     }
 }
@@ -62,53 +65,12 @@ contract Test is MsgReaderWriter {
         __STATIC_INIT();
     }
 
-    function body() public returns (uint) {
+    function body() public {
         __STATIC_INIT();
 
         Deployed dep = new Deployed();
-        msgWrite("Here's ur message.");
+        msgWrite(TO_MSG);
 		dep.body();
 		msg = msgRead(uint160(address(dep)));
     }
 }
-
-
-/*
-{
-
-    ;; Contract uses transient storage to pass a message to another contract, then read a response.
-
-	(def "T_INIT_ADDR" 0x00)
-	(def "T_MSG_ADDR" 0x20)
-
-	(def "tInit" (TLOAD (ADDRESS) T_INIT_ADDR))
-	(def "tMsg" (TLOAD (ADDRESS) T_MSG_ADDR))
-
-	(def "tInitW" (val) (TSTORE T_INIT_ADDR val))
-	(def "tMsgW" (val) (TSTORE T_MSG_ADDR val))
-
-	(def "StaticInit" 
-	    (unless tInit {
-		    (tInitW 0x01)
-		    (tMsgW 0x00)
-	    })
-	)
-
-	StaticInit
-
-	[0x20] (create {
-	
-		StaticInit
-
-		(returnlll {
-			StaticInit
-			(when (= (TLOAD (CALLER) T_MSG_ADDR) "Here's ur message.") (tMsgW "Thanks, bro."))
-			(return 0)
-		})
-	})
-
-	(tMsgW "Here's ur message.")
-	(msg @0x20 0)
-	[[0x00]] (TLOAD @0x20 T_MSG_ADDR)
-}
-*/

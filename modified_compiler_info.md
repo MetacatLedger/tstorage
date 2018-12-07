@@ -1,7 +1,7 @@
-New instructions added to LLLC. Modified compiler can be found at https://github.com/androlo/solidity, on the 'tstore' branch. Include `-DLLL=ON` when running cmake. 
+New instructions added to LLLC. Modified compiler can be found at https://github.com/androlo/solidity, on the 'tstore' and 'tstore_compact' branches. Include `-DLLL=ON` when running cmake. 
 
 
-#### Usage example
+#### Usage example, big implementation
 
 ```
 {
@@ -37,6 +37,33 @@ New instructions added to LLLC. Modified compiler can be found at https://github
 	(tMsgW "Here's ur message.")
 	(msg @0x20 0)
 	[[0x00]] (TLOAD @0x20 T_MSG_ADDR)
+}
+```
+
+#### Usage example, compact implementation
+
+```
+{
+	(def "T_INIT_ADDR" 0x00)
+	(def "T_MSG_ADDR" 0x20)
+
+	(def "tInit" (TLOAD T_INIT_ADDR))
+	(def "tMsg" (TLOAD T_MSG_ADDR))
+
+	(def "tInitW" (val) (TSTORE T_INIT_ADDR val))
+	(def "tMsgW" (val) (TSTORE T_MSG_ADDR val))
+	
+	[0x20] (create {
+
+		(returnlll {
+			(when (= tMsg "Here's ur message.") (tMsgW "Thanks, bro."))
+			(return 0)
+		})
+	})
+
+	(tMsgW "Here's ur message.")
+	(msg @0x20 0)
+	[[0x00]] tMsg ;; should be "Thanks, bro." in ascii (right padded).
 }
 ```
 
