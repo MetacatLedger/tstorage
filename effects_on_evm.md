@@ -2,6 +2,8 @@
 
 Some ideas about how generic transient storage could be used by other instructions.
 
+## Big implementation
+
 ### Calls using readonly call-, and return-data.
 
 `CALL gas addr value memPos memSize`
@@ -10,99 +12,60 @@ Some ideas about how generic transient storage could be used by other instructio
 
 `tStore(0)` is a byte array with word size 32 (like memory), laid out as such:
 
-`[callPos, callLen, retPos, retLen, nextFree, ....]`
+`[dataLen, data ...]`
 
-- Position 0x00: position of calldata
-- Position 0x20: length of call data
-- Position 0x40: position of the return data
-- Position 0x60: length of the return data
-- Position 0x80: next free address
+- Position 0x00: position of data
+- Position 0x20: length of data
 
-This would be pre-populated by txdata. If it is a transaction to a function with signature `0xAAAAAAAA` and no arguments then it would initially look like this:
-
-`[0x00 0x80 0x00 0x00 0x84 AA AA AA AA 00 00 00 00 ...]`
-
-The 0x prefixed values are shorthand for right-aligned 32 byte values.
+This would be pre-populated by txdata, and used by the EVM for both txdata and returndata.
 
 #### Making a call
 
 `CALL` - writes data from memory to `tStore(0)` and calls.
 
-The receiving contract gets the data from `tStore(0)` using the `callPos` and `callLen` values. They can either copy all the data to memory, or work with it from tstore directly (although they should at least copy the indices).
+The receiving contract gets the data from `tStore(0)`. They can either copy all the data to memory, or work with it from tstore directly.
 
-If the receiving contract returns data, `RETURN` will set `retPos` and `retLen` in `tStore(0)` to the correct values.
+If the receiving contract returns data, `RETURN` will set `dataLen` and data `tStore(0)` to the correct values.
+
+Additionally, the `CALL` and `RETURN` instructions could forcibly clear tstorage before doing anything else.
 
 #### Notes
 
-This would mean changes to the `CALL` and `RETURN` instructions, implemented at the VM level.
+This would mean changes to the `CALL` and `RETURN` instructions.
 
-`CALLDATA` and `RETURNDATA` would become "volatile" in that the various positions and size values could potentially change during runtime (when calls are made), meaning these values should be copied before any calls are made.
+`CALLDATA` and `RETURNDATA` would both become "volatile" (as is the case with `RETURNDATA` now), meaning a call made inside the code would invalidate it. There is no expectation that either of them will remain constant throughout the entire vm execution.
 
-Example of reading calldata:
+With this system, `RETURNDATA` instructions could just point to tstorage instead of the special purpose return data memory. The behavior would not change much from now, since the memory would be cleared before writing (any) new data and returning.
+
+`CALLDATA` could be managed in much the same way, so the calldata instructions could be rewritten to use tstorage instead on the VM level.
+
+Ultimately, both the returndata and calldata instructions could be deprecated, or alternatively the calldata instructions could be pointing to the original tx data, which could be added in to the tx context and remain throughout the entire tx execution. `TXDATALOAD` (and so on) would of course be better, but this would require no change of the actual name.
+
+#### Example of reading calldata
 
 ```
 assembly {
-	let cdPos := tLoad(0, 0)
-	let cdLen := tLoad(0, 0x20)
-	if (lt(cdLen, 4)) {
+	let cdLen := tLoad(0, 0)
+	
+	if lt(cdLen, 4) {
 	    revert()
 	}
-	// ...
+	
+	// read function identifier, etc.
 }
 ```
 
-Example of reading returndata:
+#### Example of reading returndata:
 
 ```
 assembly {
-	let retPos := tLoad(0, 0x40)
-	let retLen := tLoad(0, 0x60)
-	// ...
-}
-```
-
-### Calls using ordinary call-, and return-data
-
-`CALL gas addr value`
-
-`RETURN`
-
-Unlike the readonly version, this requires no params for position and size for either `CALL` or `RETURN`, but expects the proper tStore values to be already set.
-
-`tStore(_ADDRESS_)` (for every address) would use the same layout as for `tStore(0)` in the previous section:
-
-`[callPos, callLen, retPos, retLen, staticInit, nextFree, ....]`
-
-(Info on staticInit is found in the next section)
-
-To read calldata, each contract would use `tStore(CALLER)` instead of `tStore(0)`, but it would work the same as in the readonly version. To bootstrap an external transaction, the VM has to populate `tStore` for the calling address. When it does, it could skip the return + free mem data and only use [cdPos (0x40), cdLen, txdata ... ]. Additionally, `tStore(0)` could have the transaction input stored `[len, txinput ... ]` so that it can be accessed by all code during the entire transaction.
-
-To read returndata, contracts would just read retPos and retSize from the `tStore` of the address it sent the most recent call to.
-
-`CALL` expects `tStore` to be prepared for the own contract.
-
-`RETURN` expects `tStore` to be prepared for the own contract.
-
-`CALLDATA` and `RETURNDATA` would become volatile, just as in read only, so the same caveats apply.
-
-Example of reading calldata:
-
-```
-assembly {
-	let cdPos := tLoad(caller(), 0)
-	let cdLen := tLoad(caller(), 0x20)
-	// ...
-}
-```
-
-Example of reading returndata:
-
-```
-assembly {
-	let target := 0x...
-	// call( target, ... )
-	let retPos := tLoad(target, 0x40)
-	let retLen := tLoad(target, 0x60)
+	let retLen := tLoad(0, 0)
+	let x := tLoad(0, 0x20)
+	
+	if eq(x, 55) {
+	    // ...
+	}
+	
 	// ...
 }
 ```
@@ -110,8 +73,6 @@ assembly {
 ### Using tStore in code
 
 The `static` flag, or `transient`, or some other keyword, could be used to declare fields that are bound to the contract (account) over the span of an entire transaction rather then the instance of the currently running VM. `transient` may be preferable as `static` could have implications.
-
-Usage is complicated. Declaring these variables as fields would be ideal so they can be used to lock down storage fields. The question is how to initialize them and give them a unique location. This is somewhere between how storage and memory works.
 
 A type of "static initialization" could be done using a reserved field.
 
@@ -151,9 +112,43 @@ assembly {
 
 There are multiple LLL examples of this in the contract directory.
 
-#### tStore(0)
+## Compact version
 
-If contract-to-contract calls are done using the transient storage of the involved contracts instead of address 0, that address can store other information that should be available throughout the whole transaction. 
+The transient storage could be used to store call and return data. The EVM could use the address `0x00` to store the length (32 byte int), and the address `0x20` as the starting address data itself. This could also be the standard for contract languages.
 
-An example already mentioned is tx input. it could be written in at the start of the transaction, `[txDataLen, txData ...]`. Other context could also be put there, such as the initial gas.
+This could be used by the EVM to copy the initial tx data into transient storage, and when writing return data from precompiled contracts.
 
+The rule is the same as for returndata now: calldata and returndata remain valid until the next call (or create) is done from the code. Additionally, it also becomes invalid when tstorage data is manually overwritten.
+
+LLL Example:
+
+```
+{ ;; body
+    ;; STATE 1
+    ;; Here, tstorage is guaranteed to be calldata from caller. It may not be
+    ;; "correct" calldata, for example if the caller may have forgotten to write 
+    ;; it in, but it is still the calldata.
+    
+    (TSTORE 0x0 5)
+    ;; STATE 2
+    ;; tstorage has been modified and is now invalid.
+    
+    ;; ... various other code that does not touch tstorage ...
+    
+    ;; STATE 3
+    ;; whatever is in tstorage (length specified at address 0x00) will now be calldata 
+    ;; for the receiver.
+    (msg (CALLER) 0)
+    
+    ;; STATE 4
+    ;; tstorage is now returndata from the call above.
+    
+    ;; ... various other code that does not touch tstorage ...
+    
+    ;; STATE 5
+    ;; tstorage will now be return data for this execution
+    (STOP)
+}
+```
+
+This works, but it seems rather bug prone since the storage is not routinely cleared. If it is cleared by the VM (for example with a CALL it would take memory address and length params, clear tstorage and then write the new data, and similar for return) then it is better suited for passing messages but makes it useless for manual storage.
