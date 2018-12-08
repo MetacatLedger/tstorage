@@ -1,6 +1,6 @@
 ## Practical applications (big implementation)
 
-This is a list of things that transient storage could be used for.
+This is a (n incomplete) list of things that transient storage could be used for.
 
 ### Message passing
 
