@@ -1,0 +1,42 @@
+{
+    ;; Same as 007 reentrancy contract but tCtrIncr happens before the revert,
+    ;; so second increase actually happens, but this is nullified by the revert
+    ;; as expected.
+
+	(def "T_INIT_ADDR" 0x00)
+	(def "T_LOCK_ADDR" 0x20)
+	(def "T_CTR_ADDR" 0x40)
+
+	(def "tInit" (TLOAD (ADDRESS) T_INIT_ADDR))
+	(def "tLock" (TLOAD (ADDRESS) T_LOCK_ADDR))
+	(def "tCtr" (TLOAD (ADDRESS) T_CTR_ADDR))
+
+	(def "tInitW" (val) (TSTORE T_INIT_ADDR val))
+	(def "tLockW" (TSTORE T_LOCK_ADDR 0x01))
+	(def "tCtrIncr" (TSTORE T_CTR_ADDR (+ tCtr 1)))
+
+	(def "StaticInit"
+	    (unless tInit {
+		    (tInitW 1)
+	    })
+	)
+
+
+	(def "ReentrancyLock" {
+	    (when tLock (REVERT 0 0))
+        tLockW
+	})
+
+    StaticInit
+
+    ;; increase counter, but this time before the revert meaning tstorage is
+    ;; already modified before reverting. This works as expected, meaning the
+    ;; modification is undone and the return value is still 1.
+    tCtrIncr
+
+    ReentrancyLock
+
+	(msg (ADDRESS) 0) ;; should fail
+
+	(return tCtr) ;; 1
+}

@@ -25,13 +25,19 @@
 		StaticInit
 
 		(returnlll {
+		    ;; check tstorage address "T_MSG_ADDR" of (CALLER). If message is the
+		    ;; right one, write a response message to the same address in
+		    ;; this contracts own tstorage.
 			StaticInit
 			(when (= (TLOAD (CALLER) T_MSG_ADDR) "Here's ur message.") (tMsgW "Thanks, bro."))
 			(return 0)
 		})
 	})
 
+    ;; write message
 	(tMsgW "Here's ur message.")
+	;; call other contract
 	(msg @0x20 0)
+	;; read response message and write to permanent storage address 0x00
 	[[0x00]] (TLOAD @0x20 T_MSG_ADDR)
 }

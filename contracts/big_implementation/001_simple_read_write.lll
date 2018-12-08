@@ -15,5 +15,6 @@
 
 	StaticInit
 
+    ;; returns the value of init (which should be 1)
 	(return tInit)
 }

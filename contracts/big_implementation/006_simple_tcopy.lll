@@ -19,11 +19,15 @@
 
 	StaticInit
 
+    ;; write length to tstorage
 	(tDataLenW 128)
+	;; write the data
 	(TSTORE T_DATA_ADDR 0x01)
 	(TSTORE (+ T_DATA_ADDR 32) 0x02)
 	(TSTORE (+ T_DATA_ADDR 64) 0x03)
 	(TSTORE (+ T_DATA_ADDR 96) 0x04)
+	;; copy the data from tstore into memory address 0x00
 	(TCOPY (ADDRESS) T_DATA_ADDR 0x00 tDataLen)
+	;; return the data
 	(return 0x00 tDataLen)
 }

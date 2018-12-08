@@ -22,19 +22,26 @@
 	    })
 	)
 
+    ;; Check if the message received from (CALLER) is equal to the given
+    ;; message, 'val'.
 	(def "tMsgEq" (val) (= (TLOAD (CALLER) T_MSG_ADDR) val))
 
 	StaticInit
 
+    ;; when the message from (CALLER) is 0 (empty)
 	(when (tMsgEq 0) {
+	    ;; write a message
 		(tMsgW "Here's ur message.")
 
+        ;; deploy new contract
 		[0x20] (create { ;; new contract init
 
 			StaticInit
 
 			(returnlll { ;; new contract body
 				StaticInit
+
+				;; when the caller message is correct
 				(when (tMsgEq "Here's ur message.") {
 					;; write message and reply by sending a call.
 					(tMsgW "U want money?")
@@ -51,7 +58,9 @@
 			})
 		})
 
+        ;; message the new contract
 		(msg @0x20 0)
+		;; write response to permanent storage address 0x00
 		[[0x00]] (TLOAD @0x20 T_MSG_ADDR)
 		(STOP)
 	})
