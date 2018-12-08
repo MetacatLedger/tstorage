@@ -4,7 +4,7 @@ EVM modifications has been done to [solevm](https://github.com/Ohalo-Ltd/solevm)
 
 There are two relevant branches, `tstore`, and `tstore_compact`, and you check out the one needed for your testing (along with the modified solidity/lll compiler with the same branch name).
 
-The easiest way to use it is to clone the repo, npm install, (optionally) compile typescript then run code through `bin/run.js`. It uses the `geth` standalone `evm` to run the solidity evm with the given code and data as input.
+The easiest way to use it is to clone the repo, npm install, (optionally) compile typescript, compile the EVM contract through `./bin/compile.js` then run code through `bin/run.js`. It uses the `geth` standalone `evm` to run the solidity evm with the given code and data as input.
 
 To run code, pass in the code first (without 0x in front) then the data.
 
@@ -18,6 +18,13 @@ The error codes can be found in `EVMConstants.sol` and `constants.ts`.
 
 ### Implementation details
 
-The transient storage implementation (as of right now) uses a storage type map but with evm memories as values rather then just a 32 byte number. Basically gives each account an additional memory which it can read and write to from any running VM instance, and the data will persist over an entire transaction. It can also read from the transient storage of other accounts.
+The transient storage is implemented in `EVMTStorage.sol` - a map between `address` and memory (`EVMMemory.sol`), where the `address` is always a left-padded 20 byte Ethereum address. It is passed along to new EVMs in calls. After calls it is simply passed back, although it will be updated to work the way accounts works which is to pass a copy along and only replace it if the call was successful.
 
-The compact version uses the same but only writing to tStorage(0). This will change later.
+This implements all the important features of this imagined transient storage: 
+
+1. Linear memory
+2. Exists throughout the entire transaction
+3. Accounts can read the transient storage of any account. 
+3. Accounts can only write to their own storage.
+
+Gas is a later issue. As of now it's marked as having very low gas cost, but there is no gas metering, and it will not likely be a gas discussion for quite some time so it does not matter.
