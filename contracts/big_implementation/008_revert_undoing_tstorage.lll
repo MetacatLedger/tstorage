@@ -21,7 +21,6 @@
 	    })
 	)
 
-
 	(def "ReentrancyLock" {
 	    (when tLock (REVERT 0 0))
         tLockW
