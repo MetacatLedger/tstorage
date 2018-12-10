@@ -15,7 +15,7 @@ Some ideas about how generic transient storage could be used by other instructio
 `[dataLen, data ...]`
 
 - Position 0x00: position of data
-- Position 0x20: length of data
+- Position 0x20: data
 
 This would be pre-populated by txdata, and used by the EVM for both txdata and returndata.
 
@@ -48,7 +48,7 @@ assembly {
 	let cdLen := tLoad(0, 0)
 	
 	if lt(cdLen, 4) {
-	    revert()
+	    revert(0, 0)
 	}
 	
 	// read function identifier, etc.
