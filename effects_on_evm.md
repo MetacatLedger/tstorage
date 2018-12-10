@@ -55,7 +55,7 @@ assembly {
 }
 ```
 
-#### Example of reading returndata:
+#### Example of reading returndata
 
 ```
 assembly {
@@ -78,8 +78,8 @@ A type of "static initialization" could be done using a reserved field.
 
 ```
 assembly {
-    if(iszero(tload(0x80)) {
-        tstore(0x80, 1)
+    if(iszero(tload(address, 0x00)) {
+        tstore(0x00, 1)
         // other init logic
         // ...
     }
