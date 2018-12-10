@@ -4,6 +4,8 @@ Docs related to [EIP1153](https://ethereum-magicians.org/t/eip-transient-storage
 
 Note **this is not an official part of the EIP**, it is just to refine some ideas that may or may not be incorporated into it.
 
+This is also not an encouragement of this EIP but an investigation into "transient memory" of different types, what it would (or may) require in terms of evm modifications, and what it would make possible.
+
 ### Big solution
 
 Three instructions are proposed here. Informally:
