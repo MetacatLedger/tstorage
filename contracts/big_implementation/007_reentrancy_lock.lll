@@ -2,9 +2,8 @@
     ;; This contract will revert on all calls when the lock is set. This means the
     ;; contract can only be called once per tx execution.
     ;; Languages could use this as a contract modifier and implement lock logic in
-    ;; the contract code to enforce this during runtime, for example Solidity could have:
-    ;; contract C nonreentrant { ... }
-    ;; To be fully locked, the Lock should be added to init/constructor too.
+    ;; the contract code to enforce this during runtime. To be fully locked, the Lock
+    ;; should be added to init/constructor too.
 
 	(def "T_INIT_ADDR" 0x00)
 	(def "T_LOCK_ADDR" 0x20)
